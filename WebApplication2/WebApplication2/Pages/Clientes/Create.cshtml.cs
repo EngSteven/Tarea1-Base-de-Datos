@@ -85,7 +85,7 @@ namespace WebApplication2.Pages.Clientes
             clienteInfo.Precio = "";
             successMessage = "Nuevo articulo añadido correctamente.";
 
-            Response.Redirect("/Index");
+            //Response.Redirect("/Index");
         }
     }
 }

@@ -9,6 +9,7 @@ namespace WebApplication2.Pages
 {
     public class IndexModel : PageModel
     {
+        public String errorMessage = "";                                    //Variable para los mensajes de error
         private readonly ILogger<IndexModel> _logger;
 
         public IndexModel(ILogger<IndexModel> logger)
@@ -16,8 +17,8 @@ namespace WebApplication2.Pages
             _logger = logger;
         }
 
-        public List<ClienteInfo> listaClientes = new List<ClienteInfo>();
-            
+        public List<ClienteInfo> listaArticulos = new List<ClienteInfo>();
+
         public void OnGet()
         {
             try
@@ -26,68 +27,43 @@ namespace WebApplication2.Pages
 
                 using (SqlConnection connection = new SqlConnection(connectionString))
                 {
-                    connection.Open();
-                    //String sql = "SELECT * FROM Articulo";
+                    connection.Open();                                      //Se abre la coneccion con la BD.
                     using (SqlCommand command = new SqlCommand("dbo.ListaDeArticulos2", connection))
                     {
+                        //Variables para obtener el DataSet mandados de la BD.
                         SqlDataAdapter adapter = new SqlDataAdapter();
                         DataTable table = new DataTable();
 
-                        //using (SqlDataReader reader = command.ExecuteReader())
-                        //{
-                        //while (reader.Read())
-                        //{
-                        //ClienteInfo clienteInfo = new ClienteInfo();
-                        //clienteInfo.id = "" + reader.GetInt32(0);
-                        //clienteInfo.Nombre = reader.GetString(1);
-                        //clienteInfo.Precio = "" + reader.GetSqlMoney(2);
-                        //clienteInfo.created_at = reader.GetDateTime(3).ToString();
-
-                        //listaClientes.Add(clienteInfo);
-
-                        //}
-                        //}
-                        command.CommandType = CommandType.StoredProcedure;
+                        command.CommandType = CommandType.StoredProcedure;  //Indicar que el comando sera un SP.
+                                                                            //Codigo para que detecte el output del SP.
                         SqlParameter resultCodeParam = new SqlParameter("@outResultCode", SqlDbType.Int);
                         resultCodeParam.Direction = ParameterDirection.Output;
                         command.Parameters.Add(resultCodeParam);
 
-
+                        //Porceso de obtener el DataSet.
                         adapter.SelectCommand = command;
                         DataSet dataSet = new DataSet();
                         adapter.Fill(dataSet);
 
-                        //if (dataSet.Tables[1].Rows[0][0].Equals("0"))
-                        //{
-                         //   Console.WriteLine("Exito!!!!");
-                        //}
-                        //else { Console.WriteLine("Fracaso!!!!"); }
-                        
-                        int val = dataSet.Tables.Count;
-                        //Console.WriteLine(val+"Prueba1");
-                        //object value = dataSet.Tables[0].Rows[0][0];
-                        if (val == 2)
+                        //Si el output de errores por DataSet es 0 (No hay problemas).
+                        if (dataSet.Tables[0].Rows[0][0].ToString().Equals("0"))
                         {
-                            foreach (DataRow row in dataSet.Tables[0].Rows)
+                            foreach (DataRow row in dataSet.Tables[1].Rows) //Recorra cada fila de la tabla con los datos y estraigala en el tipo ClienteInfo.
                             {
                                 ClienteInfo clienteInfo = new ClienteInfo();
                                 clienteInfo.id = "" + row[0];
                                 clienteInfo.Nombre = "" + row[1];
                                 clienteInfo.Precio = "" + SqlMoney.Parse(row[2].ToString());
 
-                                listaClientes.Add(clienteInfo);
+                                listaArticulos.Add(clienteInfo);             //Añadir cada fila al array para su visualizacion.
                             }
                         }
                         else
                         {
-                            //Pendiente
+                            //En caso de que haya algun error al cargar la tabla de articulos.
+                            errorMessage = "Error al cargar la lista de articulos.";
+                            return;
                         }
-
-
-
-                        //command.ExecuteNonQuery();
-                        //int resultCode = (int)command.Parameters["@outResultCode"].Value;
-
                     }
                 }
             }
@@ -97,12 +73,10 @@ namespace WebApplication2.Pages
             }
         }
     }
-    public class ClienteInfo
+    public class ClienteInfo                                                //Clase que equivaldra a las filas de la tabla para si manipulacion.
     {
         public String id;
         public String Nombre;
         public String Precio;
-        //public String created_at;
-
     }
 }
